@@ -2,12 +2,17 @@ import tkinter as tk
 from tkinter import ttk
 import subprocess
 
-def execute_command(event=None):
+def execute_command():
     try:
-        selected_number = int(number_entry.get())
-        if selected_number < 1 or selected_number > 100:
-            raise ValueError("Number must be between 1 and 100")
-        command_to_execute = f'ddcutil setvcp 10 {selected_number} --display 1'
+        root_password = password_entry.get()
+        selected_brightness = int(brightness_entry.get())
+        selected_contrast = int(contrast_entry.get())
+
+        if selected_brightness < 1 or selected_brightness > 100 or selected_contrast < 0 or selected_contrast > 100:
+            raise ValueError("Brightness must be between 1 and 100, and contrast between 0 and 100")
+        
+        brightness_command = f'echo "{root_password}" | sudo -S ddcutil setvcp 10 {selected_brightness} --display 1'
+        contrast_command = f'echo "{root_password}" | sudo -S ddcutil setvcp 12 {selected_contrast} --display 1'
 
         splash_screen = tk.Toplevel(root)
         splash_screen.title("Splash Screen")
@@ -17,7 +22,8 @@ def execute_command(event=None):
         splash_screen.lift()
         splash_screen.update()
         
-        subprocess.run(command_to_execute, shell=True, check=True)
+        subprocess.run(brightness_command, shell=True, check=True)
+        subprocess.run(contrast_command, shell=True, check=True)
     except ValueError as ve:
         tk.messagebox.showerror("Error", str(ve))
     except subprocess.CalledProcessError as e:
@@ -25,15 +31,33 @@ def execute_command(event=None):
     finally:
         splash_screen.destroy()
 
+        # Hide only the password section after execution
+        password_label.pack_forget()
+        password_entry.pack_forget()
+
 root = tk.Tk()
-root.title("Number Selector")
-root.geometry("400x200")
+root.title("Monitor Settings Control")
+root.geometry("400x250")
 
-number_entry = ttk.Entry(root)
-number_entry.pack(pady=10)
-number_entry.bind("<Return>", execute_command)
+password_label = ttk.Label(root, text="Enter root password:")
+password_label.pack(pady=5)
 
-execute_button = ttk.Button(root, text="Execute Command", command=execute_command)
+password_entry = ttk.Entry(root, show="*")
+password_entry.pack(pady=5)
+
+brightness_label = ttk.Label(root, text="Enter brightness (1-100):")
+brightness_label.pack(pady=5)
+
+brightness_entry = ttk.Entry(root)
+brightness_entry.pack(pady=5)
+
+contrast_label = ttk.Label(root, text="Enter contrast (0-100):")
+contrast_label.pack(pady=5)
+
+contrast_entry = ttk.Entry(root)
+contrast_entry.pack(pady=5)
+
+execute_button = ttk.Button(root, text="Apply Settings", command=execute_command)
 execute_button.pack(pady=5)
 
 root.mainloop()
